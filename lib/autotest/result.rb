@@ -5,8 +5,18 @@ class Autotest::Result
   def initialize(autotest)
     @numbers = {}
     lines = autotest.results.map {|s| s.gsub(/(\e.*?m|\n)/, '') }   # remove escape sequences
-    lines.reject! {|line| !line.match(/\d+\s+(example|test|scenario|step)s?/) }   # isolate result numbers
+    lines.reject! {|line| !line.match(/\d+\s+(run|example|test|scenario|step)s?/) }   # isolate result numbers
     lines.each do |line|
+
+      # Hack out the 'N runs, ' text
+      # this is because, I think of Ruby 2.1 or Rails 4.1. Haven't been able to nail it down
+      # as it doesn't happen on a Rails 4.0.4 with Ruby 2.1.
+      # The new testing output spits out 'runs' instead of 'test' ala:
+      # 1 runs, 3 assertions, 0 failures, 0 errors, 0 skips
+      # vs.
+      # 19 tests, 89 assertions, 0 failures, 0 errors, 0 skips
+      line = line.gsub(/runs/,'tests') if line.include?('runs')
+
       prefix = nil
       line.scan(/([1-9]\d*)\s(\w+)/) do |number, kind|
         kind.sub!(/s$/, '')   # singularize
@@ -18,7 +28,9 @@ class Autotest::Result
           prefix = kind
         end
       end
+      
     end
+
   end
 
   ##
